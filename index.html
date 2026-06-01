@@ -3,79 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live LKR Exchange Rates</title>
-    <!-- Tailwind CSS for modern look -->
-    <script src="https://tailwindcss.com"></script>
+    <title>LKR Live Exchange Rates</title>
+    <style>
+        /* Base page styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        /* Responsive grid layout containing both windows */
+        .window-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* Individual Window Card Styling */
+        .currency-window {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .region-tag {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .eur-tag { color: #2563eb; }
+        .usd-tag { color: #16a34a; }
+
+        h2 {
+            color: #4b5563;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+        }
+
+        .rate-display {
+            font-size: 36px;
+            font-weight: 800;
+            color: #111827;
+            margin: 20px 0;
+            transition: color 0.2s ease;
+        }
+
+        .error-text {
+            color: #dc2626;
+        }
+
+        /* Button configurations */
+        button {
+            width: 100%;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: white;
+        }
+
+        .eur-btn { background-color: #2563eb; }
+        .eur-btn:hover { background-color: #1d4ed8; }
+
+        .usd-btn { background-color: #16a34a; }
+        .usd-btn:hover { background-color: #15803d; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+<body>
 
-    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Live Exchange Rates (LKR)</h1>
+    <h1>Live Exchange Rates (LKR)</h1>
 
-    <!-- Grid Layout: Split into two window panes -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+    <div class="window-container">
         
-        <!-- Window 1: Euro to LKR -->
-        <div class="bg-white rounded-2xl shadow-md p-8 border border-gray-200 text-center flex flex-col justify-between">
+        <!-- Left Window Pane: Euro -->
+        <div class="currency-window">
             <div>
-                <div class="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">European Union</div>
-                <h2 class="text-2xl font-bold text-gray-700 mb-6">EUR to LKR</h2>
-                <div id="eur-rate" class="text-4xl font-extrabold text-gray-900 my-4 tracking-tight">Fetching...</div>
+                <div class="region-tag eur-tag">Eurozone</div>
+                <h2>EUR to LKR</h2>
+                <div id="eur-rate" class="rate-display">Fetching...</div>
             </div>
-            <button onclick="fetchRate('EUR', 'eur-rate')" class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition duration-200">
-                Refresh Euro
-            </button>
+            <button class="eur-btn" onclick="updateSingleRate('EUR', 'eur-rate')">Refresh Euro</button>
         </div>
 
-        <!-- Window 2: USD to LKR -->
-        <div class="bg-white rounded-2xl shadow-md p-8 border border-gray-200 text-center flex flex-col justify-between">
+        <!-- Right Window Pane: US Dollar -->
+        <div class="currency-window">
             <div>
-                <div class="text-sm font-semibold text-green-600 uppercase tracking-wider mb-2">United States</div>
-                <h2 class="text-2xl font-bold text-gray-700 mb-6">USD to LKR</h2>
-                <div id="usd-rate" class="text-4xl font-extrabold text-gray-900 my-4 tracking-tight">Fetching...</div>
+                <div class="region-tag usd-tag">United States</div>
+                <h2>USD to LKR</h2>
+                <div id="usd-rate" class="rate-display">Fetching...</div>
             </div>
-            <button onclick="fetchRate('USD', 'usd-rate')" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-xl transition duration-200">
-                Refresh Dollar
-            </button>
+            <button class="usd-btn" onclick="updateSingleRate('USD', 'usd-rate')">Refresh Dollar</button>
         </div>
 
     </div>
 
     <script>
-        // JavaScript logic to query the free open API
-        async function fetchRate(fromCurrency, elementId) {
-            const displayElement = document.getElementById(elementId);
-            displayElement.innerText = "Updating...";
-            displayElement.classList.remove('text-red-500');
-            displayElement.classList.add('text-gray-900');
+        // Core Logic: Connects to the network and parses current exchange rates
+        function updateSingleRate(fromCurrency, outputElementId) {
+            const outputBox = document.getElementById(outputElementId);
+            
+            // Show loading placeholder text
+            outputBox.innerText = "Updating...";
+            outputBox.classList.remove('error-text');
 
-            try {
-                const response = await fetch(`https://er-api.com{fromCurrency}`);
-                if (!response.ok) throw new Error('Network error');
-                
-                const data = await response.json();
-                
-                if (data.result === "success") {
-                    const rate = data.rates.LKR;
-                    // Format number to 2 decimal places with commas (e.g., 324.50)
-                    displayElement.innerText = rate.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + " LKR";
-                } else {
-                    throw new Error('API Error');
-                }
-            } catch (error) {
-                displayElement.innerText = "Error Fetching";
-                displayElement.classList.remove('text-gray-900');
-                displayElement.classList.add('text-red-500');
-            }
+            // Send standard HTTP network request
+            fetch(`https://er-api.com{fromCurrency}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network offline");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.result === "success") {
+                        const directRate = data.rates.LKR;
+                        
+                        // Formats the pure decimal to clean text (e.g. 320.45 LKR)
+                        outputBox.innerText = directRate.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }) + " LKR";
+                    } else {
+                        throw new Error("Data parsing failure");
+                    }
+                })
+                .catch(error => {
+                    outputBox.innerText = "Error";
+                    outputBox.classList.add('error-text');
+                    console.error("Fetch Exception:", error);
+                });
         }
 
-        // Run both windows automatically when the browser page finishes loading
-        window.onload = () => {
-            fetchRate('EUR', 'eur-rate');
-            fetchRate('USD', 'usd-rate');
-        };
+        // Initialize script automatically when page boots up
+        window.addEventListener('DOMContentLoaded', () => {
+            updateSingleRate('EUR', 'eur-rate');
+            updateSingleRate('USD', 'usd-rate');
+        });
     </script>
 </body>
 </html>
