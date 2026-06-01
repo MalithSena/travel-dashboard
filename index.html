@@ -100,7 +100,7 @@
 
     <div class="window-container">
         
-        <!-- Window 1: Euro -->
+        <!-- Left Pane: Euro -->
         <div class="currency-window">
             <div>
                 <div class="region-tag eur-tag">Eurozone</div>
@@ -110,7 +110,7 @@
             <button class="eur-btn" onclick="updateSingleRate('EUR', 'eur-rate')">Refresh Euro</button>
         </div>
 
-        <!-- Window 2: US Dollar -->
+        <!-- Right Pane: US Dollar -->
         <div class="currency-window">
             <div>
                 <div class="region-tag usd-tag">United States</div>
@@ -128,12 +128,12 @@
             outputBox.innerText = "Updating...";
             outputBox.classList.remove('error-text');
 
-            // Using V4 fallback endpoint which handles CORS issues better in native browsers
-            const apiUrl = `https://exchangerate-api.com{fromCurrency}`;
+            // Secure, open API route that works directly on GitHub Pages
+            const apiUrl = `https://frankfurter.dev{fromCurrency}&symbols=LKR`;
 
             fetch(apiUrl)
                 .then(response => {
-                    if (!response.ok) throw new Error("HTTP connection error");
+                    if (!response.ok) throw new Error("API Route Failed");
                     return response.json();
                 })
                 .then(data => {
@@ -146,16 +146,16 @@
                             maximumFractionDigits: 2
                         }) + " LKR";
                     } else {
-                        throw new Error("Invalid format");
+                        throw new Error("Invalid Data");
                     }
                 })
                 .catch(error => {
-                    outputBox.innerHTML = "<span class='error-text'>Connection Blocked<br><small style='font-size:11px;color:#9ca3af;'>Check internet connection</small></span>";
-                    console.error("Fetch Exception:", error);
+                    outputBox.innerHTML = "<span class='error-text'>Blocked or Offline<br><small style='font-size:11px;color:#9ca3af;'>Check console logs</small></span>";
+                    console.error("Fetch Failure Details:", error);
                 });
         }
 
-        // Auto-run when browser loads
+        // Run instantly when GitHub page builds and finishes booting
         window.addEventListener('DOMContentLoaded', () => {
             updateSingleRate('EUR', 'eur-rate');
             updateSingleRate('USD', 'usd-rate');
