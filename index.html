@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LKR Live Exchange Rates</title>
     <style>
-        /* Base page styling */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background-color: #f3f4f6;
             margin: 0;
             padding: 40px 20px;
@@ -26,7 +25,6 @@
             text-align: center;
         }
 
-        /* Responsive grid layout containing both windows */
         .window-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -35,7 +33,6 @@
             max-width: 800px;
         }
 
-        /* Individual Window Card Styling */
         .currency-window {
             background-color: #ffffff;
             border: 1px solid #e5e7eb;
@@ -66,18 +63,18 @@
         }
 
         .rate-display {
-            font-size: 36px;
+            font-size: 34px;
             font-weight: 800;
             color: #111827;
             margin: 20px 0;
-            transition: color 0.2s ease;
         }
 
         .error-text {
             color: #dc2626;
+            font-size: 16px;
+            font-weight: normal;
         }
 
-        /* Button configurations */
         button {
             width: 100%;
             border: none;
@@ -103,7 +100,7 @@
 
     <div class="window-container">
         
-        <!-- Left Window Pane: Euro -->
+        <!-- Window 1: Euro -->
         <div class="currency-window">
             <div>
                 <div class="region-tag eur-tag">Eurozone</div>
@@ -113,7 +110,7 @@
             <button class="eur-btn" onclick="updateSingleRate('EUR', 'eur-rate')">Refresh Euro</button>
         </div>
 
-        <!-- Right Window Pane: US Dollar -->
+        <!-- Window 2: US Dollar -->
         <div class="currency-window">
             <div>
                 <div class="region-tag usd-tag">United States</div>
@@ -126,43 +123,39 @@
     </div>
 
     <script>
-        // Core Logic: Connects to the network and parses current exchange rates
         function updateSingleRate(fromCurrency, outputElementId) {
             const outputBox = document.getElementById(outputElementId);
-            
-            // Show loading placeholder text
             outputBox.innerText = "Updating...";
             outputBox.classList.remove('error-text');
 
-            // Send standard HTTP network request
-            fetch(`https://er-api.com{fromCurrency}`)
+            // Using V4 fallback endpoint which handles CORS issues better in native browsers
+            const apiUrl = `https://exchangerate-api.com{fromCurrency}`;
+
+            fetch(apiUrl)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Network offline");
-                    }
+                    if (!response.ok) throw new Error("HTTP connection error");
                     return response.json();
                 })
                 .then(data => {
-                    if (data.result === "success") {
+                    if (data && data.rates && data.rates.LKR) {
                         const directRate = data.rates.LKR;
                         
-                        // Formats the pure decimal to clean text (e.g. 320.45 LKR)
+                        // Output formatted text
                         outputBox.innerText = directRate.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         }) + " LKR";
                     } else {
-                        throw new Error("Data parsing failure");
+                        throw new Error("Invalid format");
                     }
                 })
                 .catch(error => {
-                    outputBox.innerText = "Error";
-                    outputBox.classList.add('error-text');
+                    outputBox.innerHTML = "<span class='error-text'>Connection Blocked<br><small style='font-size:11px;color:#9ca3af;'>Check internet connection</small></span>";
                     console.error("Fetch Exception:", error);
                 });
         }
 
-        // Initialize script automatically when page boots up
+        // Auto-run when browser loads
         window.addEventListener('DOMContentLoaded', () => {
             updateSingleRate('EUR', 'eur-rate');
             updateSingleRate('USD', 'usd-rate');
