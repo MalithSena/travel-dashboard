@@ -3,140 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Travel Dashboard</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        .dashboard-header { text-align: center; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 200px; }
-        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
-        .loading { font-style: italic; color: #7f8c8d; }
-        .news-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
-        .news-item a { color: #2980b9; text-decoration: none; font-weight: bold; }
-        .meta-text { font-size: 12px; color: #95a5a6; margin-top: 5px; }
-        .fallback-badge { background: #e67e22; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
-    </style>
+    <title>Live LKR Exchange Rates</title>
+    <!-- Tailwind CSS for modern look -->
+    <script src="https://tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
 
-    <div class="dashboard-header">
-        <h1>🌍 My Real-Time Travel Dashboard</h1>
-        <p>Live Asynchronous Multi-Source Updates</p>
-    </div>
+    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Live Exchange Rates (LKR)</h1>
 
-    <div class="grid">
-        <!-- Weather Card -->
-        <div class="card">
-            <h2>🌦️ Realtime Weather</h2>
-            <div id="weather-content" class="loading">Connecting to meteorological tower...</div>
+    <!-- Grid Layout: Split into two window panes -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+        
+        <!-- Window 1: Euro to LKR -->
+        <div class="bg-white rounded-2xl shadow-md p-8 border border-gray-200 text-center flex flex-col justify-between">
+            <div>
+                <div class="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">European Union</div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-6">EUR to LKR</h2>
+                <div id="eur-rate" class="text-4xl font-extrabold text-gray-900 my-4 tracking-tight">Fetching...</div>
+            </div>
+            <button onclick="fetchRate('EUR', 'eur-rate')" class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition duration-200">
+                Refresh Euro
+            </button>
         </div>
 
-        <!-- Exchange Rate Card -->
-        <div class="card">
-            <h2>💱 Live Exchange Rates (Base: USD)</h2>
-            <div id="exchange-content" class="loading">Syncing currency markets...</div>
+        <!-- Window 2: USD to LKR -->
+        <div class="bg-white rounded-2xl shadow-md p-8 border border-gray-200 text-center flex flex-col justify-between">
+            <div>
+                <div class="text-sm font-semibold text-green-600 uppercase tracking-wider mb-2">United States</div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-6">USD to LKR</h2>
+                <div id="usd-rate" class="text-4xl font-extrabold text-gray-900 my-4 tracking-tight">Fetching...</div>
+            </div>
+            <button onclick="fetchRate('USD', 'usd-rate')" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-xl transition duration-200">
+                Refresh Dollar
+            </button>
         </div>
 
-        <!-- News Card -->
-        <div class="card">
-            <h2>📰 Tourism & Travel News</h2>
-            <div id="news-content" class="loading">Streaming live global headlines...</div>
-        </div>
-
-        <!-- Static Card -->
-        <div class="card">
-            <h2>📰 Tourism Stats</h2>
-            <div id="news-content" class="loading">Streaming live global headlines...</div>
-        </div>
-    </div>
     </div>
 
     <script>
-        const weatherDiv = document.getElementById('weather-content');
-        const exchangeDiv = document.getElementById('exchange-content');
-        const newsDiv = document.getElementById('news-content');
+        // JavaScript logic to query the free open API
+        async function fetchRate(fromCurrency, elementId) {
+            const displayElement = document.getElementById(elementId);
+            displayElement.innerText = "Updating...";
+            displayElement.classList.remove('text-red-500');
+            displayElement.classList.add('text-gray-900');
 
-        // Main orchestrator using a fully isolated error-handling model
-        async function loadDashboard() {
-            
-            // --- 1. WEATHER PROCESSING (Isolated) ---
             try {
-                // Using an alternative fallback schema structure for Open-Meteo
-                const weatherUrl = "https://open-meteo.com";
-                const response = await fetch(weatherUrl);
-                if (!response.ok) throw new Error("API Route Blocked");
+                const response = await fetch(`https://er-api.com{fromCurrency}`);
+                if (!response.ok) throw new Error('Network error');
                 
                 const data = await response.json();
-                weatherDiv.innerHTML = `
-                    <p style="font-size: 32px; font-weight: bold; margin: 10px 0;">${data.current_weather.temperature}°C</p>
-                    <p>💨 Wind Speed: ${data.current_weather.windspeed} km/h</p>
-                    <div class="meta-text">Target Area: Colombo District Telemetry</div>
-                `;
-            } catch (err) {
-                console.warn("Weather API bypassed by browser security. Using regional baseline telemetry instead.");
-                // Live seasonal variables calculation for Colombo region
-                const estimateTemp = (29 + Math.random() * 3).toFixed(1); 
-                weatherDiv.innerHTML = `
-                    <span class="fallback-badge">🔒 Browser Secured Connection</span>
-                    <p style="font-size: 32px; font-weight: bold; margin: 10px 0;">${estimateTemp}°C</p>
-                    <p>💧 Relative Humidity: 78% (Live Trend)</p>
-                    <div class="meta-text">Source: Local Region Forecast Engine</div>
-                `;
-            }
-
-            // --- 2. EXCHANGE RATES PROCESSING (Isolated) ---
-            try {
-                const exchangeUrl = "https://er-api.com";
-                const response = await fetch(exchangeUrl);
-                const data = await response.json();
                 
-                exchangeDiv.innerHTML = `
-                    <p><b>1 USD</b> = ${data.rates.LKR.toFixed(2)} LKR (Sri Lankan Rupee)</p>
-                    <p><b>1 USD</b> = ${data.rates.EUR.toFixed(2)} EUR (Euro)</p>
-                    <p><b>1 USD</b> = ${data.rates.GBP.toFixed(2)} GBP (British Pound)</p>
-                    <div class="meta-text">Market Sync: ${data.time_last_update_utc.substring(0, 16)} UTC</div>
-                `;
-            } catch (err) {
-                exchangeDiv.innerHTML = `
-                    <p><b>1 USD</b> = 302.40 LKR (Yesterday closing check)</p>
-                    <p><b>1 USD</b> = 0.92 EUR</p>
-                    <div class="meta-text" style="color:#e74c3c;">Connection to market network timed out.</div>
-                `;
-            }
-
-            // --- 3. TOURISM NEWS PROCESSING (Isolated) ---
-            try {
-                const newsUrl = "https://rss2json.com";
-                const response = await fetch(newsUrl);
-                const data = await response.json();
-                
-                if (data.status === 'ok' && data.items.length > 0) {
-                    newsDiv.innerHTML = data.items.slice(0, 3).map(article => `
-                        <div class="news-item">
-                            <a href="${article.link}" target="_blank">${article.title}</a>
-                            <div class="meta-text">Published: ${article.pubDate.substring(0, 10)}</div>
-                        </div>
-                    `).join('');
+                if (data.result === "success") {
+                    const rate = data.rates.LKR;
+                    // Format number to 2 decimal places with commas (e.g., 324.50)
+                    displayElement.innerText = rate.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + " LKR";
                 } else {
-                    throw new Error("Empty Feed Feed Content");
+                    throw new Error('API Error');
                 }
-            } catch (err) {
-                // Instantly injects high-priority live verified information if the feed filter hits a wall
-                newsDiv.innerHTML = `
-                    <div class="news-item">
-                        <a href="https://sltda.gov.lk" target="_blank">Sri Lanka Tourism Development Authority Releases New Hospitality Guidelines</a>
-                        <div class="meta-text">Global Feed Stream Update</div>
-                    </div>
-                    <div class="news-item">
-                        <a href="https://lonelyplanet.com" target="_blank">Top Travel Hotspots: Island Eco-Tourism Packages See Demand Rise</a>
-                        <div class="meta-text">Global Feed Stream Update</div>
-                    </div>
-                `;
+            } catch (error) {
+                displayElement.innerText = "Error Fetching";
+                displayElement.classList.remove('text-gray-900');
+                displayElement.classList.add('text-red-500');
             }
         }
 
-        // Initialize dashboard rendering
-        loadDashboard();
+        // Run both windows automatically when the browser page finishes loading
+        window.onload = () => {
+            fetchRate('EUR', 'eur-rate');
+            fetchRate('USD', 'usd-rate');
+        };
     </script>
 </body>
 </html>
